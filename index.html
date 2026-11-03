@@ -1,0 +1,701 @@
+<!doctype html>
+<!-- 万年筆 筆記シミュレーター © 2026 川窪万年筆店 (sengokunooyaji) All rights reserved. https://kawakubofp.com -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>万年筆 筆記シミュレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700&family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* Layout: a writing desk. Pen and ink controls in a left column, the sheet of paper on the right.
+   Deliberately a single light look: the page is paper. */
+:root {
+  --desk: #e9e7e1;        /* desk surface */
+  --panel: #fbfaf7;
+  --ink: #1d2230;         /* UI text */
+  --muted: #5d6270;
+  --rule: #d7d4cc;
+  --accent: #22304f;      /* blue-black */
+  --accent-fg: #f6f5f1;
+  --gold: #a8842c;        /* nib gold */
+  --chip: #f0eee8;
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--desk); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 32px;
+}
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3.6vw, 34px); letter-spacing: 0.06em; }
+h1 small { font-family: var(--font-mono); font-size: 0.38em; letter-spacing: 0.2em; color: var(--muted); margin-left: 0.8em; font-weight: 400; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+.main { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 14px; display: grid; gap: 16px; }
+.panel h2 { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.16em; color: var(--muted); font-weight: 500; }
+.seg { display: grid; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; background: var(--chip); }
+.seg.c2 { grid-template-columns: repeat(2, 1fr); } .seg.c3 { grid-template-columns: repeat(3, 1fr); } .seg.c4 { grid-template-columns: repeat(4, 1fr); }
+.seg label { cursor: pointer; display: block; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span { display: block; text-align: center; padding: 6px 4px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); font-size: 13px; line-height: 1.3; height: 100%; }
+.seg span small { display: block; font-size: 10.5px; color: var(--muted); }
+.seg input:checked + span { background: var(--accent); color: var(--accent-fg); }
+.seg input:checked + span small { color: inherit; opacity: 0.8; }
+.seg input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: -2px; }
+.seg label.off { cursor: not-allowed; }
+.seg label.off span { color: #b5b2aa; background: repeating-linear-gradient(135deg, transparent 0 5px, rgba(0,0,0,0.035) 5px 6px); }
+.seg label.off span b { opacity: 0.35; }
+.rules span i { display: block; width: 18px; height: 3px; border-radius: 2px; margin: 3px auto 3px; }
+.metal span b { display: block; width: 14px; height: 6px; border-radius: 3px; margin: 2px auto 3px; }
+.readout { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+.readout b { color: var(--ink); font-weight: 500; }
+
+.inks { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.swatch { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px 4px 5px; border: 1px solid var(--rule); border-radius: 999px; background: var(--chip); cursor: pointer; font: inherit; font-size: 12.5px; color: var(--ink); }
+.swatch i { width: 16px; height: 16px; border-radius: 50%; display: inline-block; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); }
+.swatch[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.chart { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 4px; }
+.chart button { aspect-ratio: 1; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); cursor: pointer; padding: 0; min-height: 26px; }
+.chart button[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+.chart-head { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.chart-head #chart-n { color: var(--ink); }
+.chart + .custom, .custom { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+.custom input[type=color] { width: 38px; height: 28px; padding: 0; border: 1px solid var(--rule); border-radius: 4px; background: none; }
+
+.ctl { display: grid; gap: 4px; }
+.ctl-head { display: flex; justify-content: space-between; align-items: baseline; }
+.val { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.note { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button.btn { font: inherit; font-size: 13px; padding: 7px 12px; border: 1px solid var(--rule); border-radius: 4px; background: var(--chip); color: var(--ink); cursor: pointer; min-height: 36px; }
+button.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button.btn.armed { border-color: #b3261e; color: #b3261e; }
+button.btn:focus-visible, .swatch:focus-visible, .chart button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.meter { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.meter .bar { height: 6px; border-radius: 3px; background: var(--chip); border: 1px solid var(--rule); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; width: 100%; background: var(--accent); transition: width 0.15s; }
+.meter .bar i.low { background: #b3261e; }
+.meter .num { font-family: var(--font-mono); min-width: 3.5em; text-align: right; }
+.status { font-size: 12.5px; color: var(--muted); min-height: 1.5em; }
+
+.sheet { display: grid; gap: 10px; min-width: 0; }
+.trial { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px; display: grid; gap: 4px; }
+.trial-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+#trial { display: block; width: 100%; height: 86px; }
+.paper-wrap { position: relative; overflow: auto; max-height: calc(100vh - 150px); min-height: 360px; background: #d9d6ce; border-radius: 6px; padding: 18px; }
+.paper { position: relative; margin: 0 auto; box-shadow: 0 1px 2px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.14); touch-action: none; }
+.paper canvas { position: absolute; inset: 0; display: block; }
+#live { mix-blend-mode: multiply; }
+/* iPad / Apple Pencil: no text selection, loupe, callout or image drag while writing */
+.sheet, .paper, .paper * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; -webkit-tap-highlight-color: transparent; }
+body.writing { -webkit-user-select: none; user-select: none; }
+.paper-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>万年筆 筆記シミュレーター<small>FOUNTAIN PEN NIB SIMULATOR</small></h1>
+    <p>ペン先の地金と字幅を選んで書くと、筆圧によるしなりと線幅の変化、インクの濃淡を再現します。筆圧対応のペンでは実際の筆圧を使います。</p>
+  </header>
+
+  <div class="main">
+    <aside class="panel" aria-label="ペンとインク">
+      <div>
+        <h2>ペン先の地金（硬い → 柔らかい）</h2>
+        <div class="seg c3 metal" role="radiogroup" aria-label="ペン先の地金">
+          <label><input type="radio" name="metal" value="ss"><span><b style="background:#b9bec4"></b>ステンレス</span></label>
+          <label><input type="radio" name="metal" value="k14" checked><span><b style="background:#c9a64e"></b>14金</span></label>
+          <label><input type="radio" name="metal" value="k18"><span><b style="background:#d4ad48"></b>18金</span></label>
+          <label><input type="radio" name="metal" value="k21"><span><b style="background:#ddb33f"></b>21金</span></label>
+          <label><input type="radio" name="metal" value="k22"><span><b style="background:#e3b836"></b>22金</span></label>
+          <label><input type="radio" name="metal" value="k23"><span><b style="background:#e8bc2e"></b>23金</span></label>
+        </div>
+        <p class="note" id="metal-note" hidden>21金・22金・23金は国産のみです（海外製にはありません）。</p>
+      </div>
+
+      <div>
+        <h2>字幅</h2>
+        <div class="seg c4" role="radiogroup" aria-label="字幅" id="grades"></div>
+        <div class="seg c2" role="radiogroup" aria-label="国産と海外製" style="margin-top:8px">
+          <label><input type="radio" name="origin" value="domestic" checked><span>国産<small>細め</small></span></label>
+          <label><input type="radio" name="origin" value="foreign"><span>海外製<small>同じ表記でも太め</small></span></label>
+        </div>
+        <div class="seg c3" role="radiogroup" aria-label="ペン先の種類" id="cuts" style="margin-top:8px"></div>
+        <div class="readout" id="readout"></div>
+      </div>
+
+      <div>
+        <h2>インク</h2>
+        <div class="inks" id="inks"></div>
+        <div class="chart-head"><span id="chart-t"></span><span id="chart-n"></span></div>
+        <div class="chart" id="chart" aria-label="カラーチャート"></div>
+        <label class="custom">その他の色<input type="color" id="custom" value="#2f6fd1"></label>
+      </div>
+
+      <div class="ctl">
+        <div class="ctl-head"><label for="press"><b>筆圧（マウス・指で書くとき）</b></label><span class="val" id="press-v"></span></div>
+        <input type="range" id="press" min="0.05" max="1" step="0.01" value="0.4">
+        <p class="note" id="pen-note">筆圧対応のペンで書くと、実際の筆圧を使います。</p>
+      </div>
+
+      <div>
+        <h2>コンディション</h2>
+        <div class="seg c2" role="radiogroup" aria-label="ペンのコンディション" id="conds"></div>
+        <div class="ctl" id="cond-ctl" style="margin-top:8px" hidden>
+          <div class="ctl-head"><label for="sev"><b id="sev-label">程度</b></label><span class="val" id="sev-v"></span></div>
+          <input type="range" id="sev" min="0" max="1" step="0.01" value="0.5">
+          <div class="meter" id="meter" hidden>
+            <span>ペン先</span><span class="bar"><i id="m-wet"></i></span><span class="num" id="m-wet-v"></span>
+            <span id="m-tank-l">タンク</span><span class="bar" id="m-tank-b"><i id="m-tank"></i></span><span class="num" id="m-tank-v"></span>
+          </div>
+          <div class="row" id="refill-row" hidden><button class="btn" type="button" id="refill">インクを入れ直す</button></div>
+          <p class="note" id="cond-note"></p>
+        </div>
+      </div>
+
+      <div>
+        <h2>紙</h2>
+        <div class="seg c3" role="radiogroup" aria-label="紙のサイズ">
+          <label><input type="radio" name="size" value="a5" checked><span>A5 横</span></label>
+          <label><input type="radio" name="size" value="a4"><span>A4 縦</span></label>
+          <label><input type="radio" name="size" value="post"><span>はがき</span></label>
+        </div>
+        <div class="seg c3" role="radiogroup" aria-label="紙の種類" style="margin-top:6px">
+          <label><input type="radio" name="lines" value="plain"><span>白紙</span></label>
+          <label><input type="radio" name="lines" value="ruled" checked><span>横罫線<small>7mm</small></span></label>
+          <label><input type="radio" name="lines" value="vertical"><span>縦罫線<small>便箋</small></span></label>
+          <label><input type="radio" name="lines" value="genko"><span>原稿用紙<small>400字</small></span></label>
+          <label><input type="radio" name="lines" value="hanshi"><span>和紙<small>よくにじむ</small></span></label>
+        </div>
+        <div class="seg c2" role="radiogroup" aria-label="紙の色" style="margin-top:6px">
+          <label><input type="radio" name="paper" value="white" checked><span>白</span></label>
+          <label><input type="radio" name="paper" value="cream"><span>クリーム</span></label>
+        </div>
+        <div id="rule-box" style="margin-top:8px">
+          <h2 style="margin-bottom:4px">罫線の色</h2>
+          <div class="seg c4 rules" role="radiogroup" aria-label="罫線の色" id="rules"></div>
+        </div>
+      </div>
+
+      <div>
+        <h2>表示</h2>
+        <div class="seg c4" role="radiogroup" aria-label="表示倍率">
+          <label><input type="radio" name="zoom" value="fit" checked><span>全体</span></label>
+          <label><input type="radio" name="zoom" value="1"><span>実寸</span></label>
+          <label><input type="radio" name="zoom" value="2"><span>2倍</span></label>
+          <label><input type="radio" name="zoom" value="4"><span>4倍</span></label>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" type="button" id="undo">元に戻す</button>
+        <button class="btn" type="button" id="clear">全部消す</button>
+      </div>
+      <div>
+        <h2>保存</h2>
+        <div class="row">
+          <button class="btn primary" type="button" data-save="png">PNG</button>
+          <button class="btn primary" type="button" data-save="jpg">JPG</button>
+          <button class="btn primary" type="button" data-save="pdf">PDF（実寸）</button>
+        </div>
+        <p class="status" id="status">画像は 300dpi で書き出します。PDFは紙の実寸なので、等倍で印刷すると線幅も実物どおりです。</p>
+      </div>
+    </aside>
+
+    <section class="sheet" aria-label="紙">
+      <div class="trial">
+        <div class="trial-head"><span>試し書き（筆圧 弱 → 強、3倍表示）</span><span id="trial-v"></span></div>
+        <canvas id="trial" role="img" aria-label="選んだペン先で、筆圧を弱から強へ上げながら書いた見本"></canvas>
+      </div>
+      <div class="paper-wrap" id="paper-wrap">
+        <div class="paper" id="paper">
+          <canvas id="base" aria-label="書いた内容"></canvas>
+          <canvas id="live" aria-hidden="true"></canvas>
+        </div>
+      </div>
+      <div class="paper-foot"><span id="paper-info"></span><span>線幅は一般的な目安の値です。実物に合わせて調整できます。</span></div>
+    </section>
+  </div>
+</div>
+
+<script src="nib.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const radio = (n) => document.querySelector(`input[name=${n}]:checked`).value;
+  const MM = 96 / 25.4;                                  // CSS px per mm at real size
+  const PAPERS = { a5: { w: 210, h: 148, label: 'A5 横' }, a4: { w: 210, h: 297, label: 'A4 縦' }, post: { w: 100, h: 148, label: 'はがき' } };
+  const PAPER_COLOR = { white: '#fbfbf7', cream: '#f5efdc' };
+  const HANSHI = '#f4f1e8';
+  // Rule colours. 'std' keeps the classic look: blue for 横罫線, vermilion (朱) for 便箋 and 原稿用紙.
+  const RULES = {
+    std:   { label: '標準' },
+    blue:  { label: '青',     c: 'rgba(80, 110, 160, 0.42)' },
+    shu:   { label: '朱',     c: 'rgba(178, 74, 46, 0.62)' },
+    green: { label: '緑',     c: 'rgba(60, 120, 80, 0.55)' },
+    brown: { label: '茶',     c: 'rgba(130, 90, 55, 0.55)' },
+    gray:  { label: 'グレー', c: 'rgba(110, 112, 118, 0.45)' },
+    navy:  { label: '紺',     c: 'rgba(35, 50, 95, 0.55)' },
+    black: { label: '黒',     c: 'rgba(30, 30, 32, 0.6)' },
+  };
+  const ruleColor = (lines) => { const k = radio('rule'); return k === 'std' ? (lines === 'ruled' ? RULES.blue.c : RULES.shu.c) : RULES[k].c; };
+  const bleedOf = () => (radio('lines') === 'hanshi' ? 1 : 0);   // absorbent paper: the ink feathers
+
+  // ---------- controls ----------
+  $('grades').innerHTML = NIB.GRADES.map((g) => `<label><input type="radio" name="grade" value="${g}"${g === 'F' ? ' checked' : ''}><span>${g}</span></label>`).join('');
+  let ink = NIB.INKS.blueblack.color;
+  $('inks').innerHTML = Object.entries(NIB.INKS).map(([k, v]) => `<button type="button" class="swatch" data-ink="${v.color}" aria-pressed="${k === 'blueblack'}"><i style="background:${v.color}"></i>${v.label}</button>`).join('');
+  // The chart shows 8 shades of the chosen base ink; picking a base ink switches the chart to its family.
+  let family = 'blueblack';
+  function showChart() {
+    $('chart-t').textContent = `カラーチャート：${NIB.INKS[family].label}系`;
+    $('chart').innerHTML = NIB.CHART[family].map(([c, name]) => `<button type="button" data-ink="${c}" data-name="${name}" style="background:${c}" title="${name}" aria-label="${name}" aria-pressed="false"></button>`).join('');
+    $('chart').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => setInk(b.dataset.ink, b.dataset.name)));
+  }
+  function setInk(c, name) {
+    ink = c;
+    const lc = c.toLowerCase();
+    $('chart').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ink.toLowerCase() === lc)));
+    document.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.family === family && NIB.CHART[family].some(([x]) => x.toLowerCase() === lc))));
+    $('chart-n').textContent = name || 'その他の色';
+    drawTrial();
+  }
+  $('inks').querySelectorAll('.swatch').forEach((b, i) => {
+    b.dataset.family = Object.keys(NIB.INKS)[i];
+    b.addEventListener('click', () => { family = b.dataset.family; showChart(); setInk(NIB.INKS[family].color, NIB.INKS[family].label); });
+  });
+  $('custom').addEventListener('input', (e) => setInk(e.target.value));
+  showChart(); $('chart-n').textContent = NIB.INKS[family].label;
+  $('chart').querySelector('button').setAttribute('aria-pressed', 'true');
+
+  $('cuts').innerHTML = Object.entries(NIB.CUTS).map(([k, v]) => `<label><input type="radio" name="cut" value="${k}"${k === 'normal' ? ' checked' : ''}><span>${v.label}<small>${v.note}</small></span></label>`).join('');
+  const pen = () => ({ metal: radio('metal'), grade: radio('grade'), origin: radio('origin'), cut: radio('cut') });
+  const rangeText = (r, cut, html) => { const b = (v) => (html ? `<b>${v.toFixed(2)}</b>` : v.toFixed(2)); return cut === 'stub' ? `横 ${b(r.thin)} ／ 縦 ${b(r.broad)} mm` : `${b(r.min)}${html ? '〜' : ' → '}${b(r.max)} mm`; };
+  function readout() {
+    const p = pen(), r = NIB.range(p.grade, p.origin, p.metal, p.cut);
+    $('readout').innerHTML = `${p.grade}${p.cut !== 'normal' ? ' ' + NIB.CUTS[p.cut].label : ''}（${p.origin === 'domestic' ? '国産' : '海外製'}）・${NIB.METALS[p.metal].label}　線幅 ${rangeText(r, p.cut, true)}`;
+    $('press-v').textContent = Math.round(+$('press').value * 100) + '%';
+  }
+  // Foreign makers do not offer 21K / 22K / 23K nibs: those alloys are only available with 国産.
+  const DOMESTIC_ONLY = ['k21', 'k22', 'k23'];
+  function syncOrigin() {
+    const foreign = radio('origin') === 'foreign';
+    DOMESTIC_ONLY.forEach((k) => {
+      const el = document.querySelector(`input[name=metal][value=${k}]`);
+      el.disabled = foreign; el.closest('label').classList.toggle('off', foreign);
+      el.closest('label').title = foreign ? '海外製にはこの地金のペン先はありません' : '';
+    });
+    if (foreign && DOMESTIC_ONLY.includes(radio('metal'))) document.querySelector('input[name=metal][value=k18]').checked = true;
+    $('metal-note').hidden = !foreign;
+  }
+  document.querySelectorAll('input[name=origin]').forEach((el) => el.addEventListener('change', syncOrigin));
+  document.querySelectorAll('input[name=metal], input[name=grade], input[name=origin], input[name=cut]').forEach((el) => el.addEventListener('change', () => { readout(); drawTrial(); }));
+  $('press').addEventListener('input', readout);
+
+  // ---------- condition ----------
+  $('conds').innerHTML = Object.entries(NIB.CONDITIONS).map(([k, v]) => `<label><input type="radio" name="cond" value="${k}"${k === 'good' ? ' checked' : ''}><span>${v.label}${v.note ? `<small>${v.note}</small>` : ''}</span></label>`).join('');
+  const NOTES = {
+    skip: '書き出しや速い線、軽い筆圧で線が飛び、ところどころ乾いた筋になります。',
+    starve: '続けて書くとペン先が乾いて薄れ、やがて線が出なくなります。ペンを離すと少しずつ回復します。',
+    empty: '書いた量だけタンクが減ります。残りが少なくなると線がかすれて途切れ、最後は書けなくなります。',
+  };
+  let flow = null, liftAt = 0;
+  const seed = () => (Math.random() * 2 ** 32) >>> 0;
+  function setCondition(keepTank) {
+    const k = radio('cond'), sev = +$('sev').value, prev = flow && flow.state();
+    flow = NIB.flow(k, sev, seed(), keepTank && prev && flow.kind === k ? prev : {});
+    $('cond-ctl').hidden = k === 'good';
+    $('meter').hidden = $('refill-row').hidden = !(k === 'starve' || k === 'empty');
+    ['m-tank-l', 'm-tank-b', 'm-tank-v'].forEach((id) => { $(id).hidden = k !== 'empty'; });
+    $('sev-label').textContent = k === 'empty' ? '残りのインク' : '程度';
+    $('cond-note').textContent = NOTES[k] || '';
+    sevText(); meter(); drawTrial();
+  }
+  function sevText() {
+    const v = +$('sev').value;
+    $('sev-v').textContent = radio('cond') === 'empty' ? (v < 0.34 ? '多め' : v < 0.67 ? '少なめ' : 'ほとんどない') : (v < 0.34 ? '軽い' : v < 0.67 ? '中くらい' : '重い');
+  }
+  function meter() {
+    if (!flow) return;
+    const set = (id, v) => { const el = $(id); el.style.width = (v * 100).toFixed(0) + '%'; el.classList.toggle('low', v < 0.2); $(id + '-v').textContent = Math.round(v * 100) + '%'; };
+    set('m-wet', flow.wet); set('m-tank', flow.tank);
+  }
+  document.querySelectorAll('input[name=cond]').forEach((el) => el.addEventListener('change', () => setCondition(false)));
+  $('sev').addEventListener('input', () => setCondition(false));
+  $('refill').addEventListener('click', () => { flow.refill(); meter(); drawTrial(); });
+  // between strokes the feed refills the nib; keep the meter moving while the pen is up
+  setInterval(() => { if (!cur && flow && (flow.kind === 'starve' || flow.kind === 'empty')) { const now = performance.now() / 1000; flow.lift(now - liftAt); liftAt = now; meter(); } }, 200);
+
+  // ---------- stroke rendering ----------
+  // A stroke: { color, pts: [{ x, y (mm), w (mm), d (density) }] }. Width and density are fixed when written.
+  const tmp = document.createElement('canvas'), tg = tmp.getContext('2d');
+  function renderStroke(g, st, s, ox = 0, oy = 0) {
+    const P = st.pts;
+    if (!P.length) return;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wmax = 0, wsum = 0;
+    for (const p of P) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); wmax = Math.max(wmax, p.w); wsum += p.w; }
+    const pad = wmax * s + 4;
+    const bx = Math.floor((x0 - ox) * s - pad), by = Math.floor((y0 - oy) * s - pad);
+    const bw = Math.ceil((x1 - x0) * s + pad * 2), bh = Math.ceil((y1 - y0) * s + pad * 2);
+    if (bw <= 0 || bh <= 0) return;
+    if (tmp.width < bw || tmp.height < bh) { tmp.width = Math.max(tmp.width, bw); tmp.height = Math.max(tmp.height, bh); }
+    tg.setTransform(1, 0, 0, 1, 0, 0); tg.clearRect(0, 0, bw, bh);
+    tg.fillStyle = st.color;
+    const X = (p) => (p.x - ox) * s - bx, Y = (p) => (p.y - oy) * s - by;
+    // hairlines thinner than ~0.7 px are drawn at 0.7 px with proportionally less ink
+    const minR = 0.35, avgR = (wsum / P.length) * s / 2;
+    const thin = Math.min(1, avgR / minR);
+    const dot = (x, y, r) => { tg.beginPath(); tg.arc(x, y, Math.max(minR, r), 0, Math.PI * 2); tg.fill(); };
+    // Coverage c < 1 (pen condition): the tines drag dry across the paper tooth. The stamp is split
+    // into lanes across the line; a lane carries ink only where a smooth noise along the stroke stays
+    // under the coverage, so dry passages turn into streaks that follow the stroke, and gaps into skips.
+    const C = (p) => (p.c === undefined ? 1 : p.c);
+    const seed = st.seed || 1;
+    const hash = (i, j) => { let h = Math.imul(i, 374761393) ^ Math.imul(j + 1, 668265263) ^ Math.imul(seed, 2246822519); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+    const noise = (x, j) => { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return hash(i, j) * (1 - u) + hash(i + 1, j) * u; };
+    const NRM = P.map((p, i) => { const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)], dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1; return [-dy / l, dx / l]; });
+    // a stub lays its flat edge (an ellipse tilted at the edge angle) instead of a round dot
+    const SA = NIB.STUB.angle, ST = NIB.STUB.thin;
+    const flat = (x, y, wb) => { tg.beginPath(); tg.ellipse(x, y, Math.max(minR, wb), Math.max(minR, wb * ST), SA, 0, Math.PI * 2); tg.fill(); };
+    const stamp = (x, y, r, c, arc, nx, ny, wb) => {
+      if (c >= 0.97) { if (wb) flat(x, y, wb); else dot(x, y, r); return; }
+      if (c < 0.04) return;                               // a skip: no ink here at all
+      const R = Math.max(minR, r), lanes = Math.max(3, Math.min(14, Math.round(2 * R / 0.9))), lw = 2 * R / lanes, thr = Math.pow(c, 0.8);
+      for (let j = 0; j < lanes; j++) {
+        const e = Math.abs((j + 0.5) / lanes - 0.5) * 2;  // tine edges hold ink a little longer
+        if (noise(arc / 1.1, j) + 0.06 * e > thr) continue;
+        const o = ((j + 0.5) / lanes - 0.5) * 2 * R;
+        tg.beginPath(); tg.arc(x + nx * o, y + ny * o, Math.max(0.3, lw * 0.62), 0, Math.PI * 2); tg.fill();
+      }
+    };
+    stamp(X(P[0]), Y(P[0]), P[0].w * s / 2, C(P[0]), 0, NRM[0][0], NRM[0][1], P[0].W ? P[0].W * s / 2 : 0);
+    let arc = 0;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], ax = X(a), ay = Y(a), bx2 = X(b), by2 = Y(b), ca = C(a), cb = C(b);
+      const dist = Math.hypot(bx2 - ax, by2 - ay), r = Math.min(a.w, b.w) * s / 2, dmm = dist / s;
+      if (ca < 0.04 && cb < 0.04) { arc += dmm; continue; }
+      const dry = ca < 0.97 || cb < 0.97;
+      const r2 = a.W ? Math.min(r, Math.min(a.W, b.W) * ST * s / 2) : r;
+      const stepPx = dry ? Math.max(0.25, Math.min(r * 0.35, 0.5)) : Math.max(0.3, r2 * 0.5);
+      const n = Math.max(1, Math.ceil(dist / stepPx));
+      for (let k = 1; k <= n; k++) {
+        const t = k / n, nx = NRM[i - 1][0] + (NRM[i][0] - NRM[i - 1][0]) * t, ny = NRM[i - 1][1] + (NRM[i][1] - NRM[i - 1][1]) * t, nl = Math.hypot(nx, ny) || 1;
+        stamp(ax + (bx2 - ax) * t, ay + (by2 - ay) * t, (a.w + (b.w - a.w) * t) * s / 2, ca + (cb - ca) * t, arc + dmm * t, nx / nl, ny / nl, a.W ? (a.W + (b.W - a.W) * t) * s / 2 : 0);
+      }
+      arc += dmm;
+    }
+    // the ink body: translucent, multiplied into the paper
+    let dsum = 0, dn = 0; for (const p of P) if (C(p) >= 0.04) { dsum += p.d; dn++; }
+    if (!dn) return;
+    g.save();
+    g.globalCompositeOperation = 'multiply';
+    if (st.bleed) {                                      // washi: ink wicks into the fibres
+      g.fillStyle = st.color; g.strokeStyle = st.color;
+      // a soft halo, wider where the pen moved slowly (more ink had time to soak in)
+      for (const [k, a] of [[3.0, 0.045], [2.2, 0.075], [1.6, 0.11]]) {
+        g.globalAlpha = a * thin;
+        g.beginPath();
+        for (let i = 0; i < P.length; i++) { if (C(P[i]) < 0.5) continue; const p = P[i], r = Math.max(minR, p.w * s / 2 * k * (0.8 + 0.5 * Math.max(0, p.d - 0.78) / 0.22) * (0.75 + 0.5 * noise(i / 6, 90 + k * 10))); g.moveTo((p.x - ox) * s + r, (p.y - oy) * s); g.arc((p.x - ox) * s, (p.y - oy) * s, r, 0, Math.PI * 2); }
+        g.fill();
+      }
+      // capillary feathers: fine, irregular threads running out from the edge along the fibres
+      let fs = (seed ^ 0x9e3779b9) >>> 0; const fr = () => ((fs = Math.imul(fs ^ (fs >>> 15), 2246822519) + 0x6d2b79f5 >>> 0) / 4294967296);
+      g.lineWidth = Math.max(0.5, 0.05 * s); g.lineCap = 'round';
+      g.globalAlpha = 0.13 * thin;
+      g.beginPath();
+      let acc = 0;
+      for (let i = 1; i < P.length; i++) {
+        const a = P[i - 1], b = P[i]; acc += Math.hypot(b.x - a.x, b.y - a.y);
+        if (C(b) < 0.5 || acc < 0.12) continue;
+        acc = 0;
+        const n = 2 + Math.floor(fr() * 3);
+        for (let k = 0; k < n; k++) {
+          const ang = fr() * Math.PI * 2, r0 = b.w / 2 * 0.9, len = b.w * (0.25 + fr() * fr() * 1.3) * (0.6 + b.d);
+          let x = b.x + Math.cos(ang) * r0, y = b.y + Math.sin(ang) * r0, dir = ang + (fr() - 0.5) * 1.2;
+          g.moveTo((x - ox) * s, (y - oy) * s);
+          for (let t = 0; t < 3; t++) { dir += (fr() - 0.5) * 0.9; x += Math.cos(dir) * len / 3; y += Math.sin(dir) * len / 3; g.lineTo((x - ox) * s, (y - oy) * s); }
+        }
+      }
+      g.stroke();
+    }
+    g.globalAlpha = Math.min(1, (dsum / dn)) * thin;
+    g.drawImage(tmp, 0, 0, bw, bh, bx, by, bw, bh);
+    // pooling: slow passages and the ends of the stroke hold more ink
+    g.fillStyle = st.color;
+    const pool = (p, a, scale = 1) => {
+      g.globalAlpha = a * thin; g.beginPath();
+      if (p.W) g.ellipse((p.x - ox) * s, (p.y - oy) * s, Math.max(minR, p.W * s / 2 * scale), Math.max(minR, p.W * ST * s / 2 * scale), SA, 0, Math.PI * 2);
+      else g.arc((p.x - ox) * s, (p.y - oy) * s, Math.max(minR, p.w * s / 2 * scale), 0, Math.PI * 2);
+      g.fill();
+    };
+    for (let i = 0; i < P.length; i += 2) if (P[i].d > 0.88 && C(P[i]) > 0.8) pool(P[i], (P[i].d - 0.88) * 1.6 * C(P[i]), 0.92);
+    if (C(P[0]) > 0.6) pool(P[0], 0.22, 0.95);
+    if (C(P[P.length - 1]) > 0.6) pool(P[P.length - 1], 0.3, 1.0);
+    g.restore();
+  }
+
+  // ---------- paper ----------
+  const strokes = [];
+  let scale = MM, cur = null;
+  const base = $('base'), live = $('live'), bg = base.getContext('2d'), lg = live.getContext('2d');
+  function paperSize() { return PAPERS[radio('size')]; }
+  function computeScale() {
+    const z = radio('zoom'), P = paperSize();
+    if (z === 'fit') {
+      const wrap = $('paper-wrap'), avail = wrap.clientWidth - 36, availH = wrap.clientHeight - 36;
+      return Math.max(1, Math.min(avail / P.w, availH > 100 ? availH / P.h : Infinity));
+    }
+    return MM * +z;
+  }
+  function layout() {
+    const P = paperSize();
+    scale = computeScale();
+    const dpr = Math.min(2, window.devicePixelRatio || 1), w = P.w * scale, h = P.h * scale;
+    const el = $('paper'); el.style.width = w + 'px'; el.style.height = h + 'px';
+    [base, live].forEach((c) => { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.width = w + 'px'; c.style.height = h + 'px'; });
+    $('paper-info').textContent = `${P.label}（${P.w}×${P.h} mm）・表示 ${(scale / MM).toFixed(2)} 倍`;
+    redraw();
+  }
+  function drawPaper(g, s, W, H) {
+    const lines = radio('lines'), P = paperSize();
+    g.fillStyle = lines === 'hanshi' ? HANSHI : PAPER_COLOR[radio('paper')]; g.fillRect(0, 0, W, H);
+    const line = (x0, y0, x1, y1) => { g.moveTo(x0 * s, y0 * s); g.lineTo(x1 * s, y1 * s); };
+    if (lines === 'hanshi') {                            // faint fibres
+      g.strokeStyle = 'rgba(150, 140, 120, 0.10)'; g.lineWidth = Math.max(0.5, 0.05 * s);
+      let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      g.beginPath();
+      for (let i = 0; i < P.w * P.h / 40; i++) { const x = rnd() * P.w, y = rnd() * P.h, a = rnd() * Math.PI, l = 1 + rnd() * 4; line(x, y, x + Math.cos(a) * l, y + Math.sin(a) * l); }
+      g.stroke();
+      return;
+    }
+    if (lines === 'plain') return;
+    if (lines === 'ruled') {
+      g.strokeStyle = ruleColor(lines); g.lineWidth = Math.max(1, 0.12 * s);
+      g.beginPath();
+      for (let y = 21; y < P.h - 4; y += 7) line(0, y, P.w, y);
+      g.stroke();
+      return;
+    }
+    g.strokeStyle = ruleColor(lines);
+    if (lines === 'vertical') {                          // letter paper: double frame, vertical rules, read right to left
+      const m = 12, step = 10, x0 = m, x1 = P.w - m, y0 = m + 4, y1 = P.h - m;
+      g.lineWidth = Math.max(1, 0.3 * s); g.strokeRect(x0 * s, y0 * s, (x1 - x0) * s, (y1 - y0) * s);
+      g.lineWidth = Math.max(1, 0.12 * s); g.strokeRect((x0 + 1.2) * s, (y0 + 1.2) * s, (x1 - x0 - 2.4) * s, (y1 - y0 - 2.4) * s);
+      g.beginPath();
+      const n = Math.floor((x1 - x0) / step), off = (x1 - x0 - n * step) / 2;
+      for (let i = 1; i < n; i++) line(x1 - off - i * step, y0 + 1.2, x1 - off - i * step, y1 - 1.2);
+      g.stroke();
+      return;
+    }
+    // 原稿用紙 (400字): 20 lines of 20 squares, a narrow ruby space beside each line, a centre fold (柱).
+    // Landscape sheets are ruled for vertical writing (lines run right to left), portrait sheets for
+    // horizontal writing (lines run top to bottom), so the grid always fills the page.
+    const n = 20, per = 20, gapK = 0.28, foldK = 1.6, vertical = P.w >= P.h;
+    const along = n + n * gapK + foldK;                   // the direction the lines are stacked in
+    const cell = vertical ? Math.min((P.h - 24) / per, (P.w - 24) / along) : Math.min((P.w - 24) / per, (P.h - 24) / along);
+    const gw = vertical ? cell * along : cell * per, gh = vertical ? cell * per : cell * along;
+    const ox = (P.w - gw) / 2, oy = (P.h - gh) / 2;
+    g.lineWidth = Math.max(1, 0.28 * s); g.strokeRect(ox * s, oy * s, gw * s, gh * s);
+    g.lineWidth = Math.max(1, 0.12 * s);
+    g.beginPath();
+    // u runs across the stacked lines (right→left for vertical, top→bottom for horizontal); v runs along a line
+    const pt = (u, v) => (vertical ? [ox + gw - u, oy + v] : [ox + v, oy + u]);
+    const seg = (u0, v0, u1, v1) => { const a = pt(u0, v0), c = pt(u1, v1); line(a[0], a[1], c[0], c[1]); };
+    const span = cell * per;
+    let u = 0;
+    for (let c = 0; c < n; c++) {
+      if (c === n / 2) {                                  // the fold, with its fish-tail mark
+        seg(u + cell * foldK, 0, u + cell * foldK, span);
+        const mu = u + cell * foldK / 2, mv = span * 0.18, A = pt(mu - cell * 0.5, mv), B = pt(mu, mv + cell * 0.45), C2 = pt(mu + cell * 0.5, mv);
+        g.moveTo(A[0] * s, A[1] * s); g.lineTo(B[0] * s, B[1] * s); g.lineTo(C2[0] * s, C2[1] * s);
+        u += cell * foldK;
+      }
+      const a0 = u + cell * gapK, a1 = a0 + cell;          // ruby space first, then the squares
+      seg(a0, 0, a0, span); seg(a1, 0, a1, span);
+      for (let r = 1; r < per; r++) seg(a0, r * cell, a1, r * cell);
+      u = a1;
+    }
+    g.stroke();
+  }
+  function redraw() {
+    const dpr = base.width / parseFloat(base.style.width);
+    bg.setTransform(1, 0, 0, 1, 0, 0);
+    drawPaper(bg, scale * dpr, base.width, base.height);
+    strokes.forEach((st) => renderStroke(bg, st, scale * dpr));
+    lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, live.width, live.height);
+  }
+  $('rules').innerHTML = Object.entries(RULES).map(([k, v]) => `<label><input type="radio" name="rule" value="${k}"${k === 'std' ? ' checked' : ''}><span><i style="background:${v.c || 'linear-gradient(90deg, rgba(80,110,160,0.7) 50%, rgba(178,74,46,0.8) 50%)'}"></i>${v.label}</span></label>`).join('');
+  const syncRuleBox = () => { const l = radio('lines'); $('rule-box').hidden = l === 'plain' || l === 'hanshi'; };
+  document.querySelectorAll('input[name=lines]').forEach((el) => el.addEventListener('change', syncRuleBox)); syncRuleBox();
+  document.querySelectorAll('input[name=size], input[name=zoom], input[name=lines], input[name=paper], input[name=rule]').forEach((el) => el.addEventListener('change', layout));
+  window.addEventListener('resize', () => { if (radio('zoom') === 'fit') layout(); });
+
+  // ---------- writing ----------
+  let penSeen = false;
+  const paperEl = $('paper');
+  function toMM(e) { const r = paperEl.getBoundingClientRect(); return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale }; }
+  function addPoint(e) {
+    const m = toMM(e), t = e.timeStamp / 1000;
+    const isPen = e.pointerType === 'pen';
+    let p = isPen ? (e.pressure > 0 ? e.pressure : 0.05) : +$('press').value;
+    const last = cur.pts[cur.pts.length - 1];
+    let speed = 0;
+    if (last) {
+      const dt = Math.max(0.004, t - last.t), dmm = Math.hypot(m.x - last.x, m.y - last.y);
+      if (dmm < 0.03) return;                            // ignore sub-pixel jitter
+      speed = last.v * 0.6 + (dmm / dt) * 0.4;
+      p = last.p * 0.65 + p * 0.35;                       // smooth the pressure a little
+    }
+    const k = 1 + 0.55 * cur.bleed;                      // washi soaks the ink in and spreads the line
+    let w = NIB.width(cur.grade, cur.origin, cur.metal, p, speed, cur.cut) * k * (1 + 0.25 * cur.bleed * Math.max(0, 1 - speed / 60)), d = NIB.density(speed, p) * (1 - 0.1 * cur.bleed);
+    const dt = last ? Math.max(0.004, t - last.t) : 0, dmm = last ? Math.hypot(m.x - last.x, m.y - last.y) : 0;
+    let W, ux = 0, uy = 1;
+    if (cur.cut === 'stub') {                           // the line width follows the stroke direction
+      W = w;
+      if (last) { ux = (m.x - last.x) / dmm; uy = (m.y - last.y) / dmm; if (last.ux !== undefined) { ux = last.ux * 0.5 + ux * 0.5; uy = last.uy * 0.5 + uy * 0.5; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l; } }
+      w = last ? NIB.stubWidth(W, ux, uy) : W * NIB.STUB.thin;
+    }
+    const c = flow.step(dmm, dt, speed, p, w);
+    const dryK = 0.82 + 0.18 * c;                        // a starved nib lays a narrower line
+    w *= dryK; if (W) W *= dryK;
+    cur.pts.push({ x: m.x, y: m.y, w, W, ux: W ? ux : undefined, uy: W ? uy : undefined, d, c, p, v: speed, t });
+    if (W && cur.pts.length === 2) cur.pts[0].w = w;      // the first point takes the direction of the second
+  }
+  function drawLive() {
+    const dpr = live.width / parseFloat(live.style.width);
+    lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, live.width, live.height);
+    renderStroke(lg, cur, scale * dpr);
+  }
+  paperEl.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'pen') { penSeen = true; $('pen-note').textContent = 'ペン入力を検出：実際の筆圧で書いています。'; }
+    if (penSeen && e.pointerType === 'touch') return;     // palm rejection once a pen has been used
+    if (e.button > 0) return;
+    e.preventDefault();
+    paperEl.setPointerCapture(e.pointerId);
+    cur = { color: ink, ...pen(), bleed: bleedOf(), seed: seed(), pts: [], id: e.pointerId };
+    const now = performance.now() / 1000; flow.lift(now - liftAt); liftAt = now;
+    flow.start(penSeen && e.pointerType === 'pen' ? Math.max(0.05, e.pressure) : +$('press').value);
+    addPoint(e); drawLive();
+  });
+  paperEl.addEventListener('pointermove', (e) => {
+    if (!cur || e.pointerId !== cur.id) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    (evs.length ? evs : [e]).forEach(addPoint);
+    drawLive(); meter();
+  });
+  function finish(e) {
+    if (!cur || (e && e.pointerId !== cur.id)) return;
+    const st = { color: cur.color, bleed: cur.bleed, seed: cur.seed, pts: cur.pts.map(({ x, y, w, W, d, c }) => (W ? { x, y, w, W, d, c } : { x, y, w, d, c })) };
+    cur = null; liftAt = performance.now() / 1000; meter();
+    if (st.pts.length) { strokes.push(st); const dpr = base.width / parseFloat(base.style.width); renderStroke(bg, st, scale * dpr); }
+    lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, live.width, live.height);
+  }
+  paperEl.addEventListener('pointerup', finish);
+  // Safari on iPad starts a text selection / loupe / callout from a long Pencil or finger press
+  // unless the touch itself is cancelled. Pointer events still arrive after this.
+  const block = (e) => { if (e.cancelable) e.preventDefault(); };
+  ['touchstart', 'touchmove', 'touchend', 'gesturestart', 'contextmenu', 'selectstart', 'dragstart'].forEach((t) => paperEl.addEventListener(t, block, { passive: false }));
+  // while a stroke is in progress, nothing else on the page may start a selection either
+  document.addEventListener('selectstart', (e) => { if (cur) e.preventDefault(); });
+  paperEl.addEventListener('pointerdown', () => { document.body.classList.add('writing'); const s = window.getSelection && window.getSelection(); if (s && s.removeAllRanges) s.removeAllRanges(); });
+  ['pointerup', 'pointercancel'].forEach((t) => paperEl.addEventListener(t, () => document.body.classList.remove('writing')));
+  paperEl.addEventListener('pointercancel', finish);
+
+  $('undo').addEventListener('click', () => { strokes.pop(); redraw(); });
+  let armed = null;
+  $('clear').addEventListener('click', () => {
+    const b = $('clear');
+    if (!strokes.length) return;
+    if (!armed) { b.textContent = 'もう一度押すと全部消去'; b.classList.add('armed'); armed = setTimeout(() => { armed = null; b.textContent = '全部消す'; b.classList.remove('armed'); }, 3000); return; }
+    clearTimeout(armed); armed = null; b.textContent = '全部消す'; b.classList.remove('armed');
+    strokes.length = 0; redraw();
+  });
+
+  // ---------- trial stroke: pressure ramps from light to heavy ----------
+  function drawTrial() {
+    const c = $('trial'), w = c.clientWidth, h = c.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    const g = c.getContext('2d'), s = MM * 3 * dpr;
+    g.fillStyle = PAPER_COLOR.white; g.fillRect(0, 0, c.width, c.height);
+    const p = pen(), lenMM = (w - 24) / (MM * 3), midY = h / 2 / (MM * 3), amp = Math.min(4, midY - 1.2);
+    const pts = [], f = flow ? NIB.flow(flow.kind, +$('sev').value, 20240611, flow.kind === 'empty' ? { tank: flow.tank, wet: Math.max(flow.wet, 0.6) } : {}) : null;
+    if (f) f.start(0.12);
+    let lx = null, ly = null;
+    for (let i = 0; i <= 600; i++) {
+      const t = i / 600, stubT = p.cut === 'stub';
+      // a stub shows itself best on loops (true verticals and horizontals); the others on a wave
+      const x = stubT ? 4 / 3 + amp + t * (lenMM - 2 * amp) - amp * 0.9 * Math.sin(t * Math.PI * 2 * 9) : 4 / 3 + t * lenMM;
+      const y = stubT ? midY - amp * Math.cos(t * Math.PI * 2 * 9) : midY + amp * Math.sin(t * Math.PI * 7);
+      const pr = 0.12 + 0.88 * t, dmm = lx === null ? 0 : Math.hypot(x - lx, y - ly), px = lx, py = ly; lx = x; ly = y;
+      let w = NIB.width(p.grade, p.origin, p.metal, pr, 60, p.cut), W;
+      if (p.cut === 'stub') { W = w; w = lx === null || dmm === 0 ? W * NIB.STUB.thin : NIB.stubWidth(W, x - px, y - py); }
+      const c = f ? f.step(dmm, dmm / 40, 40, pr, w) : 1;
+      w *= 0.82 + 0.18 * c; if (W) W *= 0.82 + 0.18 * c;
+      pts.push({ x, y, w, W, d: NIB.density(60, pr), c });
+    }
+    renderStroke(g, { color: ink, bleed: 0, seed: 5, pts }, s);
+    $('trial-v').textContent = rangeText(NIB.range(p.grade, p.origin, p.metal, p.cut), p.cut, false);
+  }
+  window.addEventListener('resize', drawTrial);
+
+  // ---------- saving ----------
+  const DPI = 300, EXPORT = DPI / 25.4;                  // px per mm in the exported file
+  function renderExport() {
+    const P = paperSize(), c = document.createElement('canvas');
+    c.width = Math.round(P.w * EXPORT); c.height = Math.round(P.h * EXPORT);
+    const g = c.getContext('2d');
+    drawPaper(g, EXPORT, c.width, c.height);
+    strokes.forEach((st) => renderStroke(g, st, EXPORT));
+    return c;
+  }
+  const toBlob = (c, type, q) => new Promise((res) => c.toBlob(res, type, q));
+  function stamp() { const d = new Date(), z = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}`; }
+  async function saveFile(filename, blob) {
+    const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+    if (dl) { await dl.save({ filename, data: blob }); return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  document.querySelectorAll('[data-save]').forEach((b) => b.addEventListener('click', async () => {
+    const kind = b.dataset.save, name = `万年筆_${stamp()}`;
+    $('status').textContent = '書き出し中…';
+    try {
+      const c = renderExport();
+      if (kind === 'png') await saveFile(name + '.png', await toBlob(c, 'image/png'));
+      else if (kind === 'jpg') await saveFile(name + '.jpg', await toBlob(c, 'image/jpeg', 0.92));
+      else {
+        if (!window.jspdf) throw { message: 'PDFの部品を読み込めませんでした。通信状況を確認して、もう一度お試しください。' };
+        const P = paperSize();
+        const doc = new window.jspdf.jsPDF({ orientation: P.w > P.h ? 'landscape' : 'portrait', unit: 'mm', format: [P.w, P.h] });
+        doc.addImage(c.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, P.w, P.h);
+        await saveFile(name + '.pdf', doc.output('blob'));
+      }
+      $('status').textContent = `${kind.toUpperCase()} を保存しました（${paperSize().label}、300dpi）。`;
+    } catch (e) {
+      $('status').textContent = e && e.code === 'declined' ? '保存を取りやめました。' : `保存できませんでした。${(e && e.message) || ''}`;
+    }
+  }));
+
+  setCondition(false); readout(); layout(); drawTrial();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawTrial);
+})();
+</script>
+
+</body>
+</html>
