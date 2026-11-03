@@ -92,10 +92,15 @@ button.btn:focus-visible, .swatch:focus-visible, .chart button:focus-visible { o
 .status { font-size: 12.5px; color: var(--muted); min-height: 1.5em; }
 
 .sheet { display: grid; gap: 10px; min-width: 0; }
+@media (min-width: 901px) {
+  /* keep the paper in view and use the full window height while the controls scroll */
+  .sheet { position: sticky; top: 12px; }
+  .paper-wrap { height: calc(100vh - 185px); }
+}
 .trial { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px; display: grid; gap: 4px; }
 .trial-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
 #trial { display: block; width: 100%; height: 86px; }
-.paper-wrap { position: relative; overflow: auto; max-height: calc(100vh - 150px); min-height: 360px; background: #d9d6ce; border-radius: 6px; padding: 18px; }
+.paper-wrap { position: relative; overflow: auto; max-height: calc(100vh - 150px); min-height: 360px; background: #d9d6ce; border-radius: 6px; padding: 12px; }
 .paper { position: relative; margin: 0 auto; box-shadow: 0 1px 2px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.14); touch-action: none; }
 .paper canvas { position: absolute; inset: 0; display: block; }
 #live { mix-blend-mode: multiply; }
@@ -103,6 +108,21 @@ button.btn:focus-visible, .swatch:focus-visible, .chart button:focus-visible { o
 .sheet, .paper, .paper * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; -webkit-tap-highlight-color: transparent; }
 body.writing { -webkit-user-select: none; user-select: none; }
 .paper-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--muted); }
+@media (max-width: 900px) {
+  /* phones and tablets held upright: the paper comes first and stays at the top of the screen,
+     the controls scroll underneath it */
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .sheet { order: -1; position: sticky; top: 0; z-index: 2; background: var(--desk); padding: 6px 0 8px; gap: 6px; }
+  .paper-wrap { height: auto; min-height: 0; max-height: 54vh; padding: 8px; }
+  .trial { padding: 4px 10px; }
+  #trial { height: 52px; }
+  .paper-foot span:last-child { display: none; }
+  header p { display: none; }
+}
+@media (max-width: 900px) and (orientation: portrait) and (min-height: 1000px) {
+  .paper-wrap { max-height: 62vh; }
+}
+.paper.pan { touch-action: pan-x pan-y; }
 </style>
 </head>
 <body>
@@ -458,7 +478,10 @@ body.writing { -webkit-user-select: none; user-select: none; }
   function computeScale() {
     const z = radio('zoom'), P = paperSize();
     if (z === 'fit') {
-      const wrap = $('paper-wrap'), avail = wrap.clientWidth - 36, availH = wrap.clientHeight - 36;
+      const wrap = $('paper-wrap'), avail = wrap.clientWidth - 24;
+      // narrow screens: the wrap sizes to the paper, so take the height budget from the window
+      const narrow = window.matchMedia('(max-width: 900px)').matches;
+      const availH = narrow ? window.innerHeight * (window.matchMedia('(orientation: portrait) and (min-height: 1000px)').matches ? 0.62 : 0.54) - 16 : wrap.clientHeight - 24;
       return Math.max(1, Math.min(avail / P.w, availH > 100 ? availH / P.h : Infinity));
     }
     return MM * +z;
@@ -506,9 +529,14 @@ body.writing { -webkit-user-select: none; user-select: none; }
     // 原稿用紙 (400字): 20 lines of 20 squares, a narrow ruby space beside each line, a centre fold (柱).
     // Landscape sheets are ruled for vertical writing (lines run right to left), portrait sheets for
     // horizontal writing (lines run top to bottom), so the grid always fills the page.
-    const n = 20, per = 20, gapK = 0.28, foldK = 1.6, vertical = P.w >= P.h;
+    // The squares are as large as the sheet allows (8 mm margins); the ruby space between lines then
+    // widens (within 0.22–0.5 of a square) so the grid fills the other direction too.
+    const n = 20, per = 20, foldK = 1.6, vertical = P.w >= P.h, M = 8;
+    const spanAvail = (vertical ? P.h : P.w) - 2 * M, alongAvail = (vertical ? P.w : P.h) - 2 * M;
+    let cell = spanAvail / per, gapK = (alongAvail / cell - n - foldK) / n;
+    if (gapK < 0.22) { gapK = 0.22; cell = alongAvail / (n + n * gapK + foldK); }
+    gapK = Math.min(0.5, gapK);
     const along = n + n * gapK + foldK;                   // the direction the lines are stacked in
-    const cell = vertical ? Math.min((P.h - 24) / per, (P.w - 24) / along) : Math.min((P.w - 24) / per, (P.h - 24) / along);
     const gw = vertical ? cell * along : cell * per, gh = vertical ? cell * per : cell * along;
     const ox = (P.w - gw) / 2, oy = (P.h - gh) / 2;
     g.lineWidth = Math.max(1, 0.28 * s); g.strokeRect(ox * s, oy * s, gw * s, gh * s);
@@ -583,7 +611,10 @@ body.writing { -webkit-user-select: none; user-select: none; }
     renderStroke(lg, cur, scale * dpr);
   }
   paperEl.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'pen') { penSeen = true; $('pen-note').textContent = 'ペン入力を検出：実際の筆圧で書いています。'; }
+    if (e.pointerType === 'pen' && !penSeen) {
+      penSeen = true; paperEl.classList.add('pan');       // from now on fingers scroll the page, the pen writes
+      $('pen-note').textContent = 'ペン入力を検出：実際の筆圧で書いています。指では紙を動かせます。';
+    }
     if (penSeen && e.pointerType === 'touch') return;     // palm rejection once a pen has been used
     if (e.button > 0) return;
     e.preventDefault();
@@ -609,7 +640,7 @@ body.writing { -webkit-user-select: none; user-select: none; }
   paperEl.addEventListener('pointerup', finish);
   // Safari on iPad starts a text selection / loupe / callout from a long Pencil or finger press
   // unless the touch itself is cancelled. Pointer events still arrive after this.
-  const block = (e) => { if (e.cancelable) e.preventDefault(); };
+  const block = (e) => { if (e.cancelable && !(penSeen && e.touches && e.touches.length && e.touches[0].touchType !== 'stylus')) e.preventDefault(); };
   ['touchstart', 'touchmove', 'touchend', 'gesturestart', 'contextmenu', 'selectstart', 'dragstart'].forEach((t) => paperEl.addEventListener(t, block, { passive: false }));
   // while a stroke is in progress, nothing else on the page may start a selection either
   document.addEventListener('selectstart', (e) => { if (cur) e.preventDefault(); });
