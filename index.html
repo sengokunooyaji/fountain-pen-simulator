@@ -40,6 +40,8 @@ header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; }
 h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3.6vw, 34px); letter-spacing: 0.06em; }
 h1 small { font-family: var(--font-mono); font-size: 0.38em; letter-spacing: 0.2em; color: var(--muted); margin-left: 0.8em; font-weight: 400; }
 header p { margin: 0; color: var(--muted); max-width: 62ch; }
+button.lang { margin-left: auto; align-self: center; font: inherit; font-size: 13px; padding: 6px 12px; min-height: 36px; border: 1px solid var(--rule); border-radius: 999px; background: var(--panel); color: var(--ink); cursor: pointer; }
+button.lang:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .main { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
 
@@ -57,13 +59,16 @@ header p { margin: 0; color: var(--muted); max-width: 62ch; }
 .seg label.off { cursor: not-allowed; }
 .seg label.off span { color: #b5b2aa; background: repeating-linear-gradient(135deg, transparent 0 5px, rgba(0,0,0,0.035) 5px 6px); }
 .seg label.off span b { opacity: 0.35; }
+.rules span em { font-style: normal; }
 .rules span i { display: block; width: 18px; height: 3px; border-radius: 2px; margin: 3px auto 3px; }
+.metal span em { font-style: normal; }
 .metal span b { display: block; width: 14px; height: 6px; border-radius: 3px; margin: 2px auto 3px; }
 .readout { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); margin-top: 6px; }
 .readout b { color: var(--ink); font-weight: 500; }
 
 .inks { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .swatch { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px 4px 5px; border: 1px solid var(--rule); border-radius: 999px; background: var(--chip); cursor: pointer; font: inherit; font-size: 12.5px; color: var(--ink); }
+.swatch em { font-style: normal; }
 .swatch i { width: 16px; height: 16px; border-radius: 50%; display: inline-block; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); }
 .swatch[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .chart { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 4px; }
@@ -130,126 +135,127 @@ body.writing { -webkit-user-select: none; user-select: none; }
 
 <div class="wrap">
   <header>
-    <h1>万年筆 筆記シミュレーター<small>FOUNTAIN PEN NIB SIMULATOR</small></h1>
-    <p>ペン先の地金と字幅を選んで書くと、筆圧によるしなりと線幅の変化、インクの濃淡を再現します。筆圧対応のペンでは実際の筆圧を使います。</p>
+    <h1 data-th="title">万年筆 筆記シミュレーター<small>FOUNTAIN PEN NIB SIMULATOR</small></h1>
+    <button type="button" class="lang" id="lang" aria-label="Language">English</button>
+    <p data-t="lead">ペン先の地金と字幅を選んで書くと、筆圧によるしなりと線幅の変化、インクの濃淡を再現します。筆圧対応のペンでは実際の筆圧を使います。</p>
   </header>
 
   <div class="main">
-    <aside class="panel" aria-label="ペンとインク">
+    <aside class="panel" aria-label="ペンとインク" data-ta="a.panel">
       <div>
-        <h2>ペン先の地金（硬い → 柔らかい）</h2>
+        <h2 data-t="h.metal">ペン先の地金（硬い → 柔らかい）</h2>
         <div class="seg c3 metal" role="radiogroup" aria-label="ペン先の地金">
-          <label><input type="radio" name="metal" value="ss"><span><b style="background:#b9bec4"></b>ステンレス</span></label>
-          <label><input type="radio" name="metal" value="k14" checked><span><b style="background:#c9a64e"></b>14金</span></label>
-          <label><input type="radio" name="metal" value="k18"><span><b style="background:#d4ad48"></b>18金</span></label>
-          <label><input type="radio" name="metal" value="k21"><span><b style="background:#ddb33f"></b>21金</span></label>
-          <label><input type="radio" name="metal" value="k22"><span><b style="background:#e3b836"></b>22金</span></label>
-          <label><input type="radio" name="metal" value="k23"><span><b style="background:#e8bc2e"></b>23金</span></label>
+          <label><input type="radio" name="metal" value="ss"><span><b style="background:#b9bec4"></b><em data-t="metal.ss">ステンレス</em></span></label>
+          <label><input type="radio" name="metal" value="k14" checked><span><b style="background:#c9a64e"></b><em data-t="metal.k14">14金</em></span></label>
+          <label><input type="radio" name="metal" value="k18"><span><b style="background:#d4ad48"></b><em data-t="metal.k18">18金</em></span></label>
+          <label><input type="radio" name="metal" value="k21"><span><b style="background:#ddb33f"></b><em data-t="metal.k21">21金</em></span></label>
+          <label><input type="radio" name="metal" value="k22"><span><b style="background:#e3b836"></b><em data-t="metal.k22">22金</em></span></label>
+          <label><input type="radio" name="metal" value="k23"><span><b style="background:#e8bc2e"></b><em data-t="metal.k23">23金</em></span></label>
         </div>
-        <p class="note" id="metal-note" hidden>21金・22金・23金は国産のみです（海外製にはありません）。</p>
+        <p class="note" id="metal-note" data-t="metalNote" hidden>21金・22金・23金は国産のみです（海外製にはありません）。</p>
       </div>
 
       <div>
-        <h2>字幅</h2>
+        <h2 data-t="h.grade">字幅</h2>
         <div class="seg c4" role="radiogroup" aria-label="字幅" id="grades"></div>
         <div class="seg c2" role="radiogroup" aria-label="国産と海外製" style="margin-top:8px">
-          <label><input type="radio" name="origin" value="domestic" checked><span>国産<small>細め</small></span></label>
-          <label><input type="radio" name="origin" value="foreign"><span>海外製<small>同じ表記でも太め</small></span></label>
+          <label><input type="radio" name="origin" value="domestic" checked><span data-th="o.domestic">国産<small>細め</small></span></label>
+          <label><input type="radio" name="origin" value="foreign"><span data-th="o.foreign">海外製<small>同じ表記でも太め</small></span></label>
         </div>
         <div class="seg c3" role="radiogroup" aria-label="ペン先の種類" id="cuts" style="margin-top:8px"></div>
         <div class="readout" id="readout"></div>
       </div>
 
       <div>
-        <h2>インク</h2>
+        <h2 data-t="h.ink">インク</h2>
         <div class="inks" id="inks"></div>
         <div class="chart-head"><span id="chart-t"></span><span id="chart-n"></span></div>
         <div class="chart" id="chart" aria-label="カラーチャート"></div>
-        <label class="custom">その他の色<input type="color" id="custom" value="#2f6fd1"></label>
+        <label class="custom"><span data-t="custom">その他の色</span><input type="color" id="custom" value="#2f6fd1"></label>
       </div>
 
       <div class="ctl">
-        <div class="ctl-head"><label for="press"><b>筆圧（マウス・指で書くとき）</b></label><span class="val" id="press-v"></span></div>
+        <div class="ctl-head"><label for="press"><b data-t="press">筆圧（マウス・指で書くとき）</b></label><span class="val" id="press-v"></span></div>
         <input type="range" id="press" min="0.05" max="1" step="0.01" value="0.4">
-        <p class="note" id="pen-note">筆圧対応のペンで書くと、実際の筆圧を使います。</p>
+        <p class="note" id="pen-note"></p>
       </div>
 
       <div>
-        <h2>コンディション</h2>
+        <h2 data-t="h.cond">コンディション</h2>
         <div class="seg c2" role="radiogroup" aria-label="ペンのコンディション" id="conds"></div>
         <div class="ctl" id="cond-ctl" style="margin-top:8px" hidden>
           <div class="ctl-head"><label for="sev"><b id="sev-label">程度</b></label><span class="val" id="sev-v"></span></div>
           <input type="range" id="sev" min="0" max="1" step="0.01" value="0.5">
           <div class="meter" id="meter" hidden>
-            <span>ペン先</span><span class="bar"><i id="m-wet"></i></span><span class="num" id="m-wet-v"></span>
-            <span id="m-tank-l">タンク</span><span class="bar" id="m-tank-b"><i id="m-tank"></i></span><span class="num" id="m-tank-v"></span>
+            <span data-t="m.nib">ペン先</span><span class="bar"><i id="m-wet"></i></span><span class="num" id="m-wet-v"></span>
+            <span id="m-tank-l" data-t="m.tank">タンク</span><span class="bar" id="m-tank-b"><i id="m-tank"></i></span><span class="num" id="m-tank-v"></span>
           </div>
-          <div class="row" id="refill-row" hidden><button class="btn" type="button" id="refill">インクを入れ直す</button></div>
+          <div class="row" id="refill-row" hidden><button class="btn" type="button" id="refill" data-t="refill">インクを入れ直す</button></div>
           <p class="note" id="cond-note"></p>
         </div>
       </div>
 
       <div>
-        <h2>紙</h2>
+        <h2 data-t="h.paper">紙</h2>
         <div class="seg c3" role="radiogroup" aria-label="紙のサイズ">
-          <label><input type="radio" name="size" value="a5" checked><span>A5 横</span></label>
-          <label><input type="radio" name="size" value="a4"><span>A4 縦</span></label>
-          <label><input type="radio" name="size" value="post"><span>はがき</span></label>
+          <label><input type="radio" name="size" value="a5" checked><span data-t="s.a5">A5 横</span></label>
+          <label><input type="radio" name="size" value="a4"><span data-t="s.a4">A4 縦</span></label>
+          <label><input type="radio" name="size" value="post"><span data-t="s.post">はがき</span></label>
         </div>
         <div class="seg c3" role="radiogroup" aria-label="紙の種類" style="margin-top:6px">
-          <label><input type="radio" name="lines" value="plain"><span>白紙</span></label>
-          <label><input type="radio" name="lines" value="ruled" checked><span>横罫線<small>7mm</small></span></label>
-          <label><input type="radio" name="lines" value="vertical"><span>縦罫線<small>便箋</small></span></label>
-          <label><input type="radio" name="lines" value="genko"><span>原稿用紙<small>400字</small></span></label>
-          <label><input type="radio" name="lines" value="hanshi"><span>和紙<small>よくにじむ</small></span></label>
+          <label><input type="radio" name="lines" value="plain"><span data-th="l.plain">白紙</span></label>
+          <label><input type="radio" name="lines" value="ruled" checked><span data-th="l.ruled">横罫線<small>7mm</small></span></label>
+          <label><input type="radio" name="lines" value="vertical"><span data-th="l.vertical">縦罫線<small>便箋</small></span></label>
+          <label><input type="radio" name="lines" value="genko"><span data-th="l.genko">原稿用紙<small>400字</small></span></label>
+          <label><input type="radio" name="lines" value="hanshi"><span data-th="l.hanshi">和紙<small>よくにじむ</small></span></label>
         </div>
         <div class="seg c2" role="radiogroup" aria-label="紙の色" style="margin-top:6px">
-          <label><input type="radio" name="paper" value="white" checked><span>白</span></label>
-          <label><input type="radio" name="paper" value="cream"><span>クリーム</span></label>
+          <label><input type="radio" name="paper" value="white" checked><span data-t="p.white">白</span></label>
+          <label><input type="radio" name="paper" value="cream"><span data-t="p.cream">クリーム</span></label>
         </div>
         <div id="rule-box" style="margin-top:8px">
-          <h2 style="margin-bottom:4px">罫線の色</h2>
+          <h2 style="margin-bottom:4px" data-t="h.rules">罫線の色</h2>
           <div class="seg c4 rules" role="radiogroup" aria-label="罫線の色" id="rules"></div>
         </div>
       </div>
 
       <div>
-        <h2>表示</h2>
+        <h2 data-t="h.view">表示</h2>
         <div class="seg c4" role="radiogroup" aria-label="表示倍率">
-          <label><input type="radio" name="zoom" value="fit" checked><span>全体</span></label>
-          <label><input type="radio" name="zoom" value="1"><span>実寸</span></label>
-          <label><input type="radio" name="zoom" value="2"><span>2倍</span></label>
-          <label><input type="radio" name="zoom" value="4"><span>4倍</span></label>
+          <label><input type="radio" name="zoom" value="fit" checked><span data-t="z.fit">全体</span></label>
+          <label><input type="radio" name="zoom" value="1"><span data-t="z.1">実寸</span></label>
+          <label><input type="radio" name="zoom" value="2"><span data-t="z.2">2倍</span></label>
+          <label><input type="radio" name="zoom" value="4"><span data-t="z.4">4倍</span></label>
         </div>
       </div>
 
       <div class="row">
-        <button class="btn" type="button" id="undo">元に戻す</button>
-        <button class="btn" type="button" id="clear">全部消す</button>
+        <button class="btn" type="button" id="undo" data-t="undo">元に戻す</button>
+        <button class="btn" type="button" id="clear" data-t="clear">全部消す</button>
       </div>
       <div>
-        <h2>保存</h2>
+        <h2 data-t="h.save">保存</h2>
         <div class="row">
           <button class="btn primary" type="button" data-save="png">PNG</button>
           <button class="btn primary" type="button" data-save="jpg">JPG</button>
-          <button class="btn primary" type="button" data-save="pdf">PDF（実寸）</button>
+          <button class="btn primary" type="button" data-save="pdf" data-t="pdf">PDF（実寸）</button>
         </div>
-        <p class="status" id="status">画像は 300dpi で書き出します。PDFは紙の実寸なので、等倍で印刷すると線幅も実物どおりです。</p>
+        <p class="status" id="status"></p>
       </div>
     </aside>
 
-    <section class="sheet" aria-label="紙">
+    <section class="sheet" aria-label="紙" data-ta="a.sheet">
       <div class="trial">
-        <div class="trial-head"><span>試し書き（筆圧 弱 → 強、3倍表示）</span><span id="trial-v"></span></div>
-        <canvas id="trial" role="img" aria-label="選んだペン先で、筆圧を弱から強へ上げながら書いた見本"></canvas>
+        <div class="trial-head"><span data-t="trial">試し書き（筆圧 弱 → 強、3倍表示）</span><span id="trial-v"></span></div>
+        <canvas id="trial" role="img" aria-label="選んだペン先で、筆圧を弱から強へ上げながら書いた見本" data-ta="a.trial"></canvas>
       </div>
       <div class="paper-wrap" id="paper-wrap">
         <div class="paper" id="paper">
-          <canvas id="base" aria-label="書いた内容"></canvas>
+          <canvas id="base" aria-label="書いた内容" data-ta="a.base"></canvas>
           <canvas id="live" aria-hidden="true"></canvas>
         </div>
       </div>
-      <div class="paper-foot"><span id="paper-info"></span><span>線幅は一般的な目安の値です。実物に合わせて調整できます。</span></div>
+      <div class="paper-foot"><span id="paper-info"></span><span data-t="foot">線幅は一般的な目安の値です。実物に合わせて調整できます。</span></div>
     </section>
   </div>
 </div>
@@ -259,8 +265,100 @@ body.writing { -webkit-user-select: none; user-select: none; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const radio = (n) => document.querySelector(`input[name=${n}]:checked`).value;
+
+  // ---------- language ----------
+  // Japanese and English UI. Picked from ?lang=, then the viewer's last choice, then the browser language.
+  const T = {
+    ja: {
+      title: '万年筆 筆記シミュレーター<small>FOUNTAIN PEN NIB SIMULATOR</small>', langBtn: 'English',
+      lead: 'ペン先の地金と字幅を選んで書くと、筆圧によるしなりと線幅の変化、インクの濃淡を再現します。筆圧対応のペンでは実際の筆圧を使います。',
+      'a.panel': 'ペンとインク', 'a.sheet': '紙', 'a.trial': '選んだペン先で、筆圧を弱から強へ上げながら書いた見本', 'a.base': '書いた内容',
+      'h.metal': 'ペン先の地金（硬い → 柔らかい）', metalNote: '21金・22金・23金は国産のみです（海外製にはありません）。', metalOff: '海外製にはこの地金のペン先はありません',
+      metals: { ss: 'ステンレス', k14: '14金', k18: '18金', k21: '21金', k22: '22金', k23: '23金' },
+      'h.grade': '字幅', 'o.domestic': '国産<small>細め</small>', 'o.foreign': '海外製<small>同じ表記でも太め</small>', domestic: '国産', foreign: '海外製',
+      cuts: { normal: ['ノーマル', '標準'], stub: ['スタブ', '縦太・横細'], flex: ['フレックス', '筆圧で大きく変化'] },
+      readout: (g, cut, o, m, w) => `${g}${cut ? ' ' + cut : ''}（${o}）・${m}　線幅 ${w}`,
+      stubRange: (a, b) => `横 ${a} ／ 縦 ${b} mm`, rangeSep: '〜',
+      'h.ink': 'インク', inks: { blue: 'ブルー', blueblack: 'ブルーブラック', black: 'ブラック', red: 'レッド' },
+      chartTitle: (f) => `カラーチャート：${f}系`, custom: 'その他の色',
+      chart: {
+        blue: ['ブルー', 'ロイヤルブルー', 'スカイブルー', 'ターコイズブルー', '群青', '紫みのブルー', '紺', 'ブルーグレー'],
+        blueblack: ['ブルーブラック', '青みの強い', '明るめ', '黒に近い', '緑み', '紫み', '青灰', '退色した色'],
+        black: ['ブラック', '漆黒', '柔らかい黒', '茶みの黒', '青みの黒', '緑みの黒', '赤みの黒', 'チャコールグレー'],
+        red: ['レッド', '朱色', '紅', 'オレンジレッド', 'ローズ', '煉瓦色', 'ボルドー', 'ワインレッド'],
+      },
+      press: '筆圧（マウス・指で書くとき）', penNote: '筆圧対応のペンで書くと、実際の筆圧を使います。', penSeen: 'ペン入力を検出：実際の筆圧で書いています。指では紙を動かせます。',
+      'h.cond': 'コンディション',
+      conds: { good: ['良好', ''], skip: ['掠れる', 'ランダムに飛ぶ'], starve: ['インクが続かない', '書くうちに薄れる'], empty: ['インク切れ間近', 'やがて書けなくなる'] },
+      condNotes: {
+        skip: '書き出しや速い線、軽い筆圧で線が飛び、ところどころ乾いた筋になります。',
+        starve: '続けて書くとペン先が乾いて薄れ、やがて線が出なくなります。ペンを離すと少しずつ回復します。',
+        empty: '書いた量だけタンクが減ります。残りが少なくなると線がかすれて途切れ、最後は書けなくなります。',
+      },
+      sev: '程度', sevLevels: ['軽い', '中くらい', '重い'], left: '残りのインク', leftLevels: ['多め', '少なめ', 'ほとんどない'],
+      'm.nib': 'ペン先', 'm.tank': 'タンク', refill: 'インクを入れ直す',
+      'h.paper': '紙', 's.a5': 'A5 横', 's.a4': 'A4 縦', 's.post': 'はがき',
+      'l.plain': '白紙', 'l.ruled': '横罫線<small>7mm</small>', 'l.vertical': '縦罫線<small>便箋</small>', 'l.genko': '原稿用紙<small>400字</small>', 'l.hanshi': '和紙<small>よくにじむ</small>',
+      'p.white': '白', 'p.cream': 'クリーム', 'h.rules': '罫線の色',
+      rules: { std: '標準', blue: '青', shu: '朱', green: '緑', brown: '茶', gray: 'グレー', navy: '紺', black: '黒' },
+      'h.view': '表示', 'z.fit': '全体', 'z.1': '実寸', 'z.2': '2倍', 'z.4': '4倍',
+      undo: '元に戻す', clear: '全部消す', clearArm: 'もう一度押すと全部消去',
+      'h.save': '保存', pdf: 'PDF（実寸）', status: '画像は 300dpi で書き出します。PDFは紙の実寸なので、等倍で印刷すると線幅も実物どおりです。',
+      exporting: '書き出し中…', saved: (k, p) => `${k} を保存しました（${p}、300dpi）。`, declined: '保存を取りやめました。', failed: '保存できませんでした。',
+      pdfMissing: 'PDFの部品を読み込めませんでした。通信状況を確認して、もう一度お試しください。', file: '万年筆',
+      trial: '試し書き（筆圧 弱 → 強、3倍表示）', foot: '線幅は一般的な目安の値です。実物に合わせて調整できます。',
+      paperInfo: (l, w, h, z) => `${l}（${w}×${h} mm）・表示 ${z} 倍`,
+    },
+    en: {
+      title: 'Fountain Pen Writing Simulator<small>万年筆 筆記シミュレーター</small>', langBtn: '日本語',
+      lead: 'Choose a nib alloy and width, then write: the simulator reproduces how the nib flexes under pressure, how the line width changes and how the ink shades. A pressure-sensitive pen uses its real pressure.',
+      'a.panel': 'Pen and ink', 'a.sheet': 'Paper', 'a.trial': 'A sample stroke with the chosen nib, pressure rising from light to heavy', 'a.base': 'Your writing',
+      'h.metal': 'Nib alloy (firm → soft)', metalNote: '21K, 22K and 23K nibs are made in Japan only; Western makers do not offer them.', metalOff: 'Western makers do not offer a nib in this alloy',
+      metals: { ss: 'Steel', k14: '14K', k18: '18K', k21: '21K', k22: '22K', k23: '23K' },
+      'h.grade': 'Nib width', 'o.domestic': 'Japanese<small>finer</small>', 'o.foreign': 'Western<small>wider at the same grade</small>', domestic: 'Japanese', foreign: 'Western',
+      cuts: { normal: ['Standard', 'round tip'], stub: ['Stub', 'broad down, thin across'], flex: ['Flex', 'swells with pressure'] },
+      readout: (g, cut, o, m, w) => `${g}${cut ? ' ' + cut.toLowerCase() : ''} (${o}) · ${m}   width ${w}`,
+      stubRange: (a, b) => `across ${a} / down ${b} mm`, rangeSep: '–',
+      'h.ink': 'Ink', inks: { blue: 'Blue', blueblack: 'Blue-black', black: 'Black', red: 'Red' },
+      chartTitle: (f) => `Colour chart: ${f} shades`, custom: 'Other colour',
+      chart: {
+        blue: ['Blue', 'Royal blue', 'Sky blue', 'Turquoise blue', 'Ultramarine', 'Violet blue', 'Navy', 'Blue grey'],
+        blueblack: ['Blue-black', 'Bluer', 'Lighter', 'Near black', 'Greenish', 'Purplish', 'Blue grey', 'Faded'],
+        black: ['Black', 'Jet black', 'Soft black', 'Brownish black', 'Bluish black', 'Greenish black', 'Reddish black', 'Charcoal grey'],
+        red: ['Red', 'Vermilion', 'Crimson', 'Orange red', 'Rose', 'Brick', 'Bordeaux', 'Wine red'],
+      },
+      press: 'Pressure (mouse or finger)', penNote: 'With a pressure-sensitive pen, its real pressure is used.', penSeen: 'Pen detected: writing with real pressure. Fingers move the paper.',
+      'h.cond': 'Condition',
+      conds: { good: ['Good', ''], skip: ['Skipping', 'skips at random'], starve: ['Starved', 'fades as you write'], empty: ['Running dry', 'soon stops writing'] },
+      condNotes: {
+        skip: 'The line skips at the start of strokes, on fast strokes and under light pressure, leaving dry streaks here and there.',
+        starve: 'Writing on and on dries the nib: the line fades and finally stops. Lift the pen and it slowly recovers.',
+        empty: 'The tank empties as you write. When it runs low the line goes dry and breaks up, and in the end it stops.',
+      },
+      sev: 'Severity', sevLevels: ['light', 'moderate', 'heavy'], left: 'Ink left', leftLevels: ['plenty', 'low', 'almost none'],
+      'm.nib': 'Nib', 'm.tank': 'Tank', refill: 'Refill ink',
+      'h.paper': 'Paper', 's.a5': 'A5 landscape', 's.a4': 'A4 portrait', 's.post': 'Postcard',
+      'l.plain': 'Plain', 'l.ruled': 'Ruled<small>7 mm</small>', 'l.vertical': 'Letter<small>vertical rules</small>', 'l.genko': 'Genkō yōshi<small>400 squares</small>', 'l.hanshi': 'Washi<small>bleeds</small>',
+      'p.white': 'White', 'p.cream': 'Cream', 'h.rules': 'Rule colour',
+      rules: { std: 'Default', blue: 'Blue', shu: 'Vermilion', green: 'Green', brown: 'Brown', gray: 'Grey', navy: 'Navy', black: 'Black' },
+      'h.view': 'View', 'z.fit': 'Fit', 'z.1': 'Actual', 'z.2': '2×', 'z.4': '4×',
+      undo: 'Undo', clear: 'Clear all', clearArm: 'Tap again to clear all',
+      'h.save': 'Save', pdf: 'PDF (true size)', status: 'Images export at 300 dpi. The PDF is at true paper size: print it at 100% and line widths match the real thing.',
+      exporting: 'Exporting…', saved: (k, p) => `${k} saved (${p}, 300 dpi).`, declined: 'Save cancelled.', failed: 'Could not save. ',
+      pdfMissing: 'The PDF component could not be loaded. Check your connection and try again.', file: 'fountain-pen',
+      trial: 'Test stroke (pressure light → heavy, shown 3×)', foot: 'Line widths are typical values and can be calibrated to real pens.',
+      paperInfo: (l, w, h, z) => `${l} (${w}×${h} mm) · view ${z}×`,
+    },
+  };
+  let lang = (() => {
+    const q = new URLSearchParams(location.search).get('lang');
+    if (q === 'ja' || q === 'en') return q;
+    try { const s = localStorage.getItem('fp-lang'); if (s === 'ja' || s === 'en') return s; } catch (e) { /* storage unavailable */ }
+    return ((navigator.languages && navigator.languages[0]) || navigator.language || 'ja').toLowerCase().startsWith('ja') ? 'ja' : 'en';
+  })();
+  const t = (k) => T[lang][k];
   const MM = 96 / 25.4;                                  // CSS px per mm at real size
-  const PAPERS = { a5: { w: 210, h: 148, label: 'A5 横' }, a4: { w: 210, h: 297, label: 'A4 縦' }, post: { w: 100, h: 148, label: 'はがき' } };
+  const PAPERS = { a5: { w: 210, h: 148 }, a4: { w: 210, h: 297 }, post: { w: 100, h: 148 } };
   const PAPER_COLOR = { white: '#fbfbf7', cream: '#f5efdc' };
   const HANSHI = '#f4f1e8';
   // Rule colours. 'std' keeps the classic look: blue for 横罫線, vermilion (朱) for 便箋 and 原稿用紙.
@@ -280,36 +378,40 @@ body.writing { -webkit-user-select: none; user-select: none; }
   // ---------- controls ----------
   $('grades').innerHTML = NIB.GRADES.map((g) => `<label><input type="radio" name="grade" value="${g}"${g === 'F' ? ' checked' : ''}><span>${g}</span></label>`).join('');
   let ink = NIB.INKS.blueblack.color;
-  $('inks').innerHTML = Object.entries(NIB.INKS).map(([k, v]) => `<button type="button" class="swatch" data-ink="${v.color}" aria-pressed="${k === 'blueblack'}"><i style="background:${v.color}"></i>${v.label}</button>`).join('');
+  $('inks').innerHTML = Object.entries(NIB.INKS).map(([k, v]) => `<button type="button" class="swatch" data-ink="${v.color}" aria-pressed="${k === 'blueblack'}"><i style="background:${v.color}"></i><em data-t="ink.${k}">${v.label}</em></button>`).join('');
   // The chart shows 8 shades of the chosen base ink; picking a base ink switches the chart to its family.
-  let family = 'blueblack';
-  function showChart() {
-    $('chart-t').textContent = `カラーチャート：${NIB.INKS[family].label}系`;
-    $('chart').innerHTML = NIB.CHART[family].map(([c, name]) => `<button type="button" data-ink="${c}" data-name="${name}" style="background:${c}" title="${name}" aria-label="${name}" aria-pressed="false"></button>`).join('');
-    $('chart').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => setInk(b.dataset.ink, b.dataset.name)));
+  let family = 'blueblack', shade = 0;                   // shade: index in the family's chart, -1 = a custom colour
+  function chartLabels() {
+    $('chart-t').textContent = t('chartTitle')(t('inks')[family]);
+    $('chart').querySelectorAll('button').forEach((b, i) => { const n = t('chart')[family][i]; b.title = n; b.setAttribute('aria-label', n); });
+    $('chart-n').textContent = shade >= 0 ? t('chart')[family][shade] : t('custom');
   }
-  function setInk(c, name) {
-    ink = c;
+  function showChart() {
+    $('chart').innerHTML = NIB.CHART[family].map(([c], i) => `<button type="button" data-ink="${c}" data-i="${i}" style="background:${c}" aria-pressed="false"></button>`).join('');
+    $('chart').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => setInk(b.dataset.ink, +b.dataset.i)));
+  }
+  function setInk(c, i = -1) {
+    ink = c; shade = i;
     const lc = c.toLowerCase();
     $('chart').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ink.toLowerCase() === lc)));
     document.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.family === family && NIB.CHART[family].some(([x]) => x.toLowerCase() === lc))));
-    $('chart-n').textContent = name || 'その他の色';
+    chartLabels();
     drawTrial();
   }
   $('inks').querySelectorAll('.swatch').forEach((b, i) => {
     b.dataset.family = Object.keys(NIB.INKS)[i];
-    b.addEventListener('click', () => { family = b.dataset.family; showChart(); setInk(NIB.INKS[family].color, NIB.INKS[family].label); });
+    b.addEventListener('click', () => { family = b.dataset.family; showChart(); setInk(NIB.INKS[family].color, 0); });
   });
   $('custom').addEventListener('input', (e) => setInk(e.target.value));
-  showChart(); $('chart-n').textContent = NIB.INKS[family].label;
+  showChart();
   $('chart').querySelector('button').setAttribute('aria-pressed', 'true');
 
-  $('cuts').innerHTML = Object.entries(NIB.CUTS).map(([k, v]) => `<label><input type="radio" name="cut" value="${k}"${k === 'normal' ? ' checked' : ''}><span>${v.label}<small>${v.note}</small></span></label>`).join('');
+  $('cuts').innerHTML = Object.entries(NIB.CUTS).map(([k, v]) => `<label><input type="radio" name="cut" value="${k}"${k === 'normal' ? ' checked' : ''}><span data-th="cut.${k}">${v.label}<small>${v.note}</small></span></label>`).join('');
   const pen = () => ({ metal: radio('metal'), grade: radio('grade'), origin: radio('origin'), cut: radio('cut') });
-  const rangeText = (r, cut, html) => { const b = (v) => (html ? `<b>${v.toFixed(2)}</b>` : v.toFixed(2)); return cut === 'stub' ? `横 ${b(r.thin)} ／ 縦 ${b(r.broad)} mm` : `${b(r.min)}${html ? '〜' : ' → '}${b(r.max)} mm`; };
+  const rangeText = (r, cut, html) => { const b = (v) => (html ? `<b>${v.toFixed(2)}</b>` : v.toFixed(2)); return cut === 'stub' ? t('stubRange')(b(r.thin), b(r.broad)) : `${b(r.min)}${html ? t('rangeSep') : ' → '}${b(r.max)} mm`; };
   function readout() {
     const p = pen(), r = NIB.range(p.grade, p.origin, p.metal, p.cut);
-    $('readout').innerHTML = `${p.grade}${p.cut !== 'normal' ? ' ' + NIB.CUTS[p.cut].label : ''}（${p.origin === 'domestic' ? '国産' : '海外製'}）・${NIB.METALS[p.metal].label}　線幅 ${rangeText(r, p.cut, true)}`;
+    $('readout').innerHTML = t('readout')(p.grade, p.cut !== 'normal' ? t('cuts')[p.cut][0] : '', t(p.origin), t('metals')[p.metal], rangeText(r, p.cut, true));
     $('press-v').textContent = Math.round(+$('press').value * 100) + '%';
   }
   // Foreign makers do not offer 21K / 22K / 23K nibs: those alloys are only available with 国産.
@@ -319,7 +421,7 @@ body.writing { -webkit-user-select: none; user-select: none; }
     DOMESTIC_ONLY.forEach((k) => {
       const el = document.querySelector(`input[name=metal][value=${k}]`);
       el.disabled = foreign; el.closest('label').classList.toggle('off', foreign);
-      el.closest('label').title = foreign ? '海外製にはこの地金のペン先はありません' : '';
+      el.closest('label').title = foreign ? t('metalOff') : '';
     });
     if (foreign && DOMESTIC_ONLY.includes(radio('metal'))) document.querySelector('input[name=metal][value=k18]').checked = true;
     $('metal-note').hidden = !foreign;
@@ -329,12 +431,7 @@ body.writing { -webkit-user-select: none; user-select: none; }
   $('press').addEventListener('input', readout);
 
   // ---------- condition ----------
-  $('conds').innerHTML = Object.entries(NIB.CONDITIONS).map(([k, v]) => `<label><input type="radio" name="cond" value="${k}"${k === 'good' ? ' checked' : ''}><span>${v.label}${v.note ? `<small>${v.note}</small>` : ''}</span></label>`).join('');
-  const NOTES = {
-    skip: '書き出しや速い線、軽い筆圧で線が飛び、ところどころ乾いた筋になります。',
-    starve: '続けて書くとペン先が乾いて薄れ、やがて線が出なくなります。ペンを離すと少しずつ回復します。',
-    empty: '書いた量だけタンクが減ります。残りが少なくなると線がかすれて途切れ、最後は書けなくなります。',
-  };
+  $('conds').innerHTML = Object.entries(NIB.CONDITIONS).map(([k, v]) => `<label><input type="radio" name="cond" value="${k}"${k === 'good' ? ' checked' : ''}><span data-th="cond.${k}">${v.label}${v.note ? `<small>${v.note}</small>` : ''}</span></label>`).join('');
   let flow = null, liftAt = 0;
   const seed = () => (Math.random() * 2 ** 32) >>> 0;
   function setCondition(keepTank) {
@@ -343,13 +440,13 @@ body.writing { -webkit-user-select: none; user-select: none; }
     $('cond-ctl').hidden = k === 'good';
     $('meter').hidden = $('refill-row').hidden = !(k === 'starve' || k === 'empty');
     ['m-tank-l', 'm-tank-b', 'm-tank-v'].forEach((id) => { $(id).hidden = k !== 'empty'; });
-    $('sev-label').textContent = k === 'empty' ? '残りのインク' : '程度';
-    $('cond-note').textContent = NOTES[k] || '';
     sevText(); meter(); drawTrial();
   }
   function sevText() {
-    const v = +$('sev').value;
-    $('sev-v').textContent = radio('cond') === 'empty' ? (v < 0.34 ? '多め' : v < 0.67 ? '少なめ' : 'ほとんどない') : (v < 0.34 ? '軽い' : v < 0.67 ? '中くらい' : '重い');
+    const v = +$('sev').value, k = radio('cond'), lv = v < 0.34 ? 0 : v < 0.67 ? 1 : 2;
+    $('sev-label').textContent = k === 'empty' ? t('left') : t('sev');
+    $('sev-v').textContent = (k === 'empty' ? t('leftLevels') : t('sevLevels'))[lv];
+    $('cond-note').textContent = t('condNotes')[k] || '';
   }
   function meter() {
     if (!flow) return;
@@ -492,7 +589,7 @@ body.writing { -webkit-user-select: none; user-select: none; }
     const dpr = Math.min(2, window.devicePixelRatio || 1), w = P.w * scale, h = P.h * scale;
     const el = $('paper'); el.style.width = w + 'px'; el.style.height = h + 'px';
     [base, live].forEach((c) => { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.width = w + 'px'; c.style.height = h + 'px'; });
-    $('paper-info').textContent = `${P.label}（${P.w}×${P.h} mm）・表示 ${(scale / MM).toFixed(2)} 倍`;
+    $('paper-info').textContent = t('paperInfo')(t('s.' + radio('size')), P.w, P.h, (scale / MM).toFixed(2));
     redraw();
   }
   function drawPaper(g, s, W, H) {
@@ -568,7 +665,7 @@ body.writing { -webkit-user-select: none; user-select: none; }
     strokes.forEach((st) => renderStroke(bg, st, scale * dpr));
     lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, live.width, live.height);
   }
-  $('rules').innerHTML = Object.entries(RULES).map(([k, v]) => `<label><input type="radio" name="rule" value="${k}"${k === 'std' ? ' checked' : ''}><span><i style="background:${v.c || 'linear-gradient(90deg, rgba(80,110,160,0.7) 50%, rgba(178,74,46,0.8) 50%)'}"></i>${v.label}</span></label>`).join('');
+  $('rules').innerHTML = Object.entries(RULES).map(([k, v]) => `<label><input type="radio" name="rule" value="${k}"${k === 'std' ? ' checked' : ''}><span><i style="background:${v.c || 'linear-gradient(90deg, rgba(80,110,160,0.7) 50%, rgba(178,74,46,0.8) 50%)'}"></i><em data-t="rule.${k}">${v.label}</em></span></label>`).join('');
   const syncRuleBox = () => { const l = radio('lines'); $('rule-box').hidden = l === 'plain' || l === 'hanshi'; };
   document.querySelectorAll('input[name=lines]').forEach((el) => el.addEventListener('change', syncRuleBox)); syncRuleBox();
   document.querySelectorAll('input[name=size], input[name=zoom], input[name=lines], input[name=paper], input[name=rule]').forEach((el) => el.addEventListener('change', layout));
@@ -613,7 +710,7 @@ body.writing { -webkit-user-select: none; user-select: none; }
   paperEl.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'pen' && !penSeen) {
       penSeen = true; paperEl.classList.add('pan');       // from now on fingers scroll the page, the pen writes
-      $('pen-note').textContent = 'ペン入力を検出：実際の筆圧で書いています。指では紙を動かせます。';
+      $('pen-note').textContent = t('penSeen');
     }
     if (penSeen && e.pointerType === 'touch') return;     // palm rejection once a pen has been used
     if (e.button > 0) return;
@@ -653,8 +750,8 @@ body.writing { -webkit-user-select: none; user-select: none; }
   $('clear').addEventListener('click', () => {
     const b = $('clear');
     if (!strokes.length) return;
-    if (!armed) { b.textContent = 'もう一度押すと全部消去'; b.classList.add('armed'); armed = setTimeout(() => { armed = null; b.textContent = '全部消す'; b.classList.remove('armed'); }, 3000); return; }
-    clearTimeout(armed); armed = null; b.textContent = '全部消す'; b.classList.remove('armed');
+    if (!armed) { b.textContent = t('clearArm'); b.classList.add('armed'); armed = setTimeout(() => { armed = null; b.textContent = t('clear'); b.classList.remove('armed'); }, 3000); return; }
+    clearTimeout(armed); armed = null; b.textContent = t('clear'); b.classList.remove('armed');
     strokes.length = 0; redraw();
   });
 
@@ -704,26 +801,59 @@ body.writing { -webkit-user-select: none; user-select: none; }
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
   document.querySelectorAll('[data-save]').forEach((b) => b.addEventListener('click', async () => {
-    const kind = b.dataset.save, name = `万年筆_${stamp()}`;
-    $('status').textContent = '書き出し中…';
+    const kind = b.dataset.save, name = `${t('file')}_${stamp()}`;
+    $('status').textContent = t('exporting');
     try {
       const c = renderExport();
       if (kind === 'png') await saveFile(name + '.png', await toBlob(c, 'image/png'));
       else if (kind === 'jpg') await saveFile(name + '.jpg', await toBlob(c, 'image/jpeg', 0.92));
       else {
-        if (!window.jspdf) throw { message: 'PDFの部品を読み込めませんでした。通信状況を確認して、もう一度お試しください。' };
+        if (!window.jspdf) throw { message: t('pdfMissing') };
         const P = paperSize();
         const doc = new window.jspdf.jsPDF({ orientation: P.w > P.h ? 'landscape' : 'portrait', unit: 'mm', format: [P.w, P.h] });
         doc.addImage(c.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, P.w, P.h);
         await saveFile(name + '.pdf', doc.output('blob'));
       }
-      $('status').textContent = `${kind.toUpperCase()} を保存しました（${paperSize().label}、300dpi）。`;
+      $('status').textContent = t('saved')(kind.toUpperCase(), t('s.' + radio('size')));
     } catch (e) {
-      $('status').textContent = e && e.code === 'declined' ? '保存を取りやめました。' : `保存できませんでした。${(e && e.message) || ''}`;
+      $('status').textContent = e && e.code === 'declined' ? t('declined') : `${t('failed')}${(e && e.message) || ''}`;
     }
   }));
 
-  setCondition(false); readout(); layout(); drawTrial();
+  // ---------- apply the language ----------
+  function lookup(key) {                                 // 'metal.k14' → T[lang].metals.k14 etc.; plain keys as they are
+    const [g, k] = key.split('.');
+    const L = T[lang];
+    if (k !== undefined && !(key in L)) {
+      if (g === 'metal') return L.metals[k];
+      if (g === 'ink') return L.inks[k];
+      if (g === 'rule') return L.rules[k];
+      if (g === 'cut') return `${L.cuts[k][0]}<small>${L.cuts[k][1]}</small>`;
+      if (g === 'cond') return L.conds[k][0] + (L.conds[k][1] ? `<small>${L.conds[k][1]}</small>` : '');
+    }
+    return L[key];
+  }
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = lang === 'ja' ? '万年筆 筆記シミュレーター' : 'Fountain Pen Writing Simulator';
+    document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = lookup(el.dataset.t); });
+    document.querySelectorAll('[data-th]').forEach((el) => { el.innerHTML = lookup(el.dataset.th); });   // our own strings only
+    document.querySelectorAll('[data-ta]').forEach((el) => { el.setAttribute('aria-label', lookup(el.dataset.ta)); });
+    $('lang').textContent = t('langBtn');
+    $('lang').setAttribute('aria-label', lang === 'ja' ? 'Switch to English' : '日本語に切り替える');
+    $('pen-note').textContent = penSeen ? t('penSeen') : t('penNote');
+    $('status').textContent = t('status');
+    chartLabels(); readout(); syncOrigin(); sevText();
+    if (base.style.width) layout();
+    drawTrial();
+  }
+  $('lang').addEventListener('click', () => {
+    lang = lang === 'ja' ? 'en' : 'ja';
+    try { localStorage.setItem('fp-lang', lang); } catch (e) { /* storage unavailable */ }
+    applyLang();
+  });
+
+  setCondition(false); readout(); layout(); applyLang();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawTrial);
 })();
 </script>
